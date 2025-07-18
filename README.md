@@ -1,15 +1,25 @@
 # MCP Simple Server
 
-Minimal Model Context Protocol server with streamable HTTP transport. Built with FastMCP following the official Anthropic MCP specification 2025-06-18.
+A minimal, reference implementation of a Model Context Protocol server with streamable HTTP transport. Built with FastMCP following the official Anthropic MCP specification 2025-06-18. Perfect starting point for building remote MCP servers.
+
+## 🎯 Purpose
+
+This project serves as a simple, well-documented reference for developers who want to:
+
+- Build their first MCP server
+- Deploy MCP servers to cloud platforms (Railway, Heroku, Render)
+- Understand the MCP protocol implementation
+- Create a foundation for more sophisticated MCP solutions
 
 ## Features
 
 - ✅ **Two Math Tools**: `add` and `multiply` functions
 - ✅ **Streamable HTTP Transport**: Modern MCP protocol with SSE support
 - ✅ **Session Management**: Proper MCP initialization flow
-- ✅ **Production Ready**: Docker, Railway, Heroku, Render deployment configs
-- ✅ **Automated Testing**: Complete protocol validation
+- ✅ **Remote Deployment**: Railway, Heroku, Render deployment configs
+- ✅ **Automated Testing**: Complete protocol validation and debugging tools
 - ✅ **Claude Desktop Integration**: Ready for AI assistant integration
+- ✅ **Reference Implementation**: Well-documented code for learning
 
 ## Quick Start
 
@@ -32,6 +42,7 @@ python test_server.py
 ```
 
 Expected output:
+
 ```
 🧪 Starting MCP Server Tests
 ✅ Initialize successful - Server: Simple Server
@@ -45,18 +56,22 @@ Expected output:
 ## Available Tools
 
 ### `add(a, b)`
+
 Adds two numbers together.
 
 **Example:**
+
 ```json
 {"name": "add", "arguments": {"a": 25, "b": 17}}
 → Returns: 42
 ```
 
 ### `multiply(a, b)`
+
 Multiplies two numbers together.
 
 **Example:**
+
 ```json
 {"name": "multiply", "arguments": {"a": 8, "b": 6}}
 → Returns: 48
@@ -64,7 +79,12 @@ Multiplies two numbers together.
 
 ## Manual Testing with curl
 
-### 1. Initialize Session
+### Local Testing (Development)
+
+For testing your local development server running on `localhost:8000`:
+
+#### 1. Initialize Session
+
 ```bash
 curl -X POST http://localhost:8000/mcp/ \
   -H "Content-Type: application/json" \
@@ -73,7 +93,8 @@ curl -X POST http://localhost:8000/mcp/ \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"clientInfo":{"name":"test-client","version":"1.0.0"}}}'
 ```
 
-### 2. Send Initialized Notification
+#### 2. Send Initialized Notification
+
 ```bash
 curl -X POST http://localhost:8000/mcp/ \
   -H "Content-Type: application/json" \
@@ -83,7 +104,8 @@ curl -X POST http://localhost:8000/mcp/ \
   -d '{"jsonrpc":"2.0","method":"notifications/initialized"}'
 ```
 
-### 3. List Tools
+#### 3. List Tools
+
 ```bash
 curl -X POST http://localhost:8000/mcp/ \
   -H "Content-Type: application/json" \
@@ -93,7 +115,8 @@ curl -X POST http://localhost:8000/mcp/ \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
 ```
 
-### 4. Call Add Tool
+#### 4. Call Add Tool
+
 ```bash
 curl -X POST http://localhost:8000/mcp/ \
   -H "Content-Type: application/json" \
@@ -103,11 +126,31 @@ curl -X POST http://localhost:8000/mcp/ \
   -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"add","arguments":{"a":25,"b":17}}}'
 ```
 
+### Remote Testing (Production)
+
+For testing your deployed server, replace `localhost:8000` with your deployment URL:
+
+```bash
+# Example with Railway deployment
+curl -X POST https://your-app.railway.app/mcp/ \
+  -H "Content-Type: application/json" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"clientInfo":{"name":"test-client","version":"1.0.0"}}}'
+```
+
+**Note**: For comprehensive remote testing, use the automated test script:
+
+```bash
+python test_deployment.py your-app.railway.app
+```
+
 ## Deployment
 
 ### Railway (Recommended)
 
 1. **Push to GitHub**:
+
    ```bash
    git add .
    git commit -m "ready for deployment"
@@ -115,12 +158,19 @@ curl -X POST http://localhost:8000/mcp/ \
    ```
 
 2. **Deploy to Railway**:
+
    - Go to [railway.app](https://railway.app)
    - Click "Deploy from GitHub repo"
    - Select your repository
    - Railway auto-detects Dockerfile and deploys
 
-3. **Your MCP URL**: `https://your-app.railway.app/mcp/`
+3. **Test your deployment**:
+
+   ```bash
+   python test_deployment.py your-app-name.up.railway.app
+   ```
+
+4. **Your MCP URL**: `https://your-app.railway.app/mcp/`
 
 ### Heroku
 
@@ -148,7 +198,8 @@ docker run -p 8000:8000 mcp-simple-server
 
 ## Claude Desktop Integration
 
-### Local Server
+### Local Server Configuration
+
 ```json
 {
   "mcpServers": {
@@ -161,31 +212,62 @@ docker run -p 8000:8000 mcp-simple-server
 }
 ```
 
-### Remote Server (after deployment)
+### Remote Server Configuration (Recommended)
+
+For remote servers deployed to Railway, Heroku, or Render, use the `mcp-remote` package:
+
 ```json
 {
   "mcpServers": {
     "simple-server-remote": {
-      "command": "curl",
+      "command": "npx",
       "args": [
-        "-X", "POST",
+        "-y",
+        "mcp-remote",
         "https://your-app.railway.app/mcp/",
-        "-H", "Content-Type: application/json",
-        "-H", "MCP-Protocol-Version: 2025-06-18",
-        "-H", "Accept: application/json, text/event-stream"
+        "--allow-http",
+        "--header",
+        "Accept: application/json, text/event-stream"
       ]
     }
   }
 }
 ```
 
-**Configuration Location:**
+**Key Configuration Notes:**
+
+- Use `npx` with the `-y` flag to auto-install `mcp-remote`
+- Include the trailing slash in the URL: `/mcp/`
+- Add the `--allow-http` flag for HTTP connections
+- Include the Accept header for proper SSE support
+
+### Alternative: Direct Python Proxy (Advanced)
+
+For advanced users or debugging purposes, you can create a custom Python proxy:
+
+```json
+{
+  "mcpServers": {
+    "simple-server-proxy": {
+      "command": "python",
+      "args": ["claude_mcp_proxy.py"],
+      "cwd": "/path/to/mcp-simple-server"
+    }
+  }
+}
+```
+
+**Note**: This requires the `claude_mcp_proxy.py` script from the repository and is mainly for debugging purposes. Use `mcp-remote` for production.
+
+**Configuration File Locations:**
+
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ## Test with Claude
 
 After integration, ask Claude:
+
 - "Can you add 42 and 18 for me?"
 - "What's 7 times 9?"
 - "What tools do you have available?"
@@ -212,28 +294,39 @@ def divide(a: float, b: float) -> float:
 
 ### Environment Variables
 
-- `HOST`: Server host (default: 127.0.0.1)
-- `PORT`: Server port (default: 8000, set by FastMCP)
+- `HOST`: Server host (default: 127.0.0.1, use 0.0.0.0 for deployment)
+- `PORT`: Server port (default: 8000, Railway sets this automatically)
 
 ```bash
 HOST=0.0.0.0 PORT=3000 python main.py
 ```
 
-Note: FastMCP uses port 8000 by default, but you can override with the PORT environment variable.
+Note: For Railway deployment, FastMCP will automatically bind to `0.0.0.0:$PORT`.
 
 ## Project Structure
 
 ```
 mcp-simple-server/
-├── main.py              # MCP server (~25 lines)
-├── test_server.py       # Automated tests (~300 lines)
-├── pyproject.toml       # Project configuration
-├── README.md            # This documentation
-├── uv.lock              # Dependency lock file
-├── Dockerfile           # Docker deployment
-├── railway.toml         # Railway configuration
-├── Procfile             # Heroku configuration
-└── render.yaml          # Render configuration
+├── main.py                    # MCP server (~25 lines)
+├── test_server.py             # Local server tests (~300 lines)
+├── test_deployment.py         # Remote deployment tests
+├── test_host_binding.py       # Host binding tests
+├── test_proxy_script.py       # Proxy testing script
+├── test_streamable_app.py     # Streamable HTTP tests
+├── test_tool_verification.py  # Tool verification tests
+├── debug_railway_server.py    # Railway debugging utilities
+├── debug_fastmcp.py           # FastMCP debugging utilities
+├── claude_mcp_proxy.py        # Claude Desktop proxy (optional)
+├── start.sh                   # Shell startup script
+├── pyproject.toml             # Project configuration
+├── README.md                  # This documentation
+├── uv.lock                    # Dependency lock file
+├── .gitignore                 # Git ignore patterns
+├── .python-version            # Python version specification
+├── Dockerfile                 # Docker deployment
+├── railway.toml               # Railway configuration
+├── Procfile                   # Heroku configuration
+└── render.yaml                # Render configuration
 ```
 
 ## Architecture
@@ -248,23 +341,27 @@ mcp-simple-server/
 ## Technical Details
 
 ### Server Implementation
+
 - **Framework**: FastMCP (official Anthropic library)
 - **Transport**: Streamable HTTP with Server-Sent Events
 - **Protocol**: MCP 2025-06-18 specification
 - **Dependencies**: `httpx>=0.28.1`, `mcp>=1.9.4`
 
 ### MCP Protocol Flow
+
 1. Client sends `initialize` request
 2. Server responds with capabilities and session ID
 3. Client sends `initialized` notification
 4. Normal operations begin (tools/list, tools/call, etc.)
 
 ### Tool Response Format
+
 Tools return simple Python values (float, int, str) which FastMCP automatically wraps in the proper MCP response format.
 
 ## Troubleshooting
 
 ### Server Won't Start
+
 ```bash
 # Check if port is in use
 lsof -i :8000
@@ -274,6 +371,7 @@ PORT=3000 python main.py
 ```
 
 ### MCP Protocol Errors
+
 ```bash
 # Run automated test
 python test_server.py
@@ -282,31 +380,34 @@ python test_server.py
 ```
 
 ### Claude Desktop Not Connecting
-1. Verify JSON configuration syntax
-2. Check server URL accessibility
-3. Restart Claude Desktop after config changes
-4. Ensure proper MCP endpoint path (`/mcp/` with trailing slash)
+
+1. **Verify JSON configuration syntax** - Use a JSON validator
+2. **Check server URL accessibility** - Test with `curl` or browser
+3. **Restart Claude Desktop** after config changes
+4. **Ensure proper MCP endpoint path** - Use `/mcp/` with trailing slash
+5. **Use `mcp-remote` for remote servers** - Don't use `curl` for remote connections
 
 ### Test Remote Deployment
+
+Test your deployed server with the provided script:
+
 ```bash
 # Test your deployed server (replace with your URL)
-python -c "
-import asyncio
-from test_server import MCPServerTest
+python test_deployment.py your-app.railway.app
 
-async def test():
-    async with MCPServerTest('https://your-app.railway.app') as tester:
-        await tester.run_all_tests()
-
-asyncio.run(test())
-"
+# Or with full URL
+python test_deployment.py https://your-app.railway.app
 ```
 
+This will run the complete MCP protocol test suite against your remote server.
+
 ### Common Issues
+
 - **Wrong endpoint**: Use `/mcp/` (with trailing slash)
 - **Missing headers**: Include all required MCP headers
 - **Session management**: Must send `initialized` notification after `initialize`
-- **Port confusion**: FastMCP defaults to 8000, not 3000
+- **Remote connections**: Use `mcp-remote`, not `curl` for Claude Desktop
+- **Port binding**: Use `0.0.0.0:$PORT` for deployment, not `127.0.0.1`
 
 ## Dependencies
 
@@ -318,6 +419,7 @@ dependencies = [
 ```
 
 The project uses:
+
 - **mcp**: Official Anthropic MCP Python SDK
 - **httpx**: Modern HTTP client for automated testing
 - **Python**: Requires Python >=3.10
@@ -327,8 +429,9 @@ The project uses:
 1. Fork the repository
 2. Make your changes
 3. Run tests: `python test_server.py`
-4. Ensure all tests pass
-5. Submit a pull request
+4. Test deployment: `python test_deployment.py your-test-url`
+5. Ensure all tests pass
+6. Submit a pull request
 
 ## License
 
@@ -341,3 +444,4 @@ MIT License
 - [Claude Desktop](https://claude.ai/download)
 - [Railway Deployment](https://railway.app)
 - [Render Deployment](https://render.com)
+- [mcp-remote Package](https://www.npmjs.com/package/mcp-remote)
